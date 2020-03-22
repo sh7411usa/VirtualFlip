@@ -1,6 +1,8 @@
 # VirtualFlip
 VirtualFlip small tool to allow basic functionality like tap and swipe on 4G flip phone via a PC UI
 	
+	VirtualFlip2
+	
 Get it at https://github.com/sh7411usa/VirtualFlip/releases
 or direct download VirtualFlip2 v0.91BETA:
 https://github.com/sh7411usa/VirtualFlip/releases/download/0.91BETA/VirtualFlip2.exe
@@ -78,6 +80,23 @@ J)	you can (attempt) to install apk files (android app packages) to the device u
 
 obviously the software is provide as is with no gaurantees, and no responsibility is
 taken by the dev for any eventualities arising even indirectly from the use of VirtualFlip2
-	
+
+You can get apps for 4G flip phones from apps4flip.com (unaffiliated). once the app files
+are in your download folder, you can easily install and set them up using VirtualFlip2.
+
+Here we give instructions how to install waze from their site using our app. (btw, we take
+no responsibility for any apps promoted on any platform - even our own). this guide is for
+educational purposes.
+1.)	Download the App file (*.apk)
+2.) Launch VirtualFlip after following instructions above.
+3.) go to menu>install app
+4.) find the app you just downloaded, and click ok
+5.) be patient. the larger the app, the longer it takes. you will be notified when install
+	completes.
+6.) the app installs in the background, so you can continue to use virtualflip while it installs
+7.) launch the app. you can do this in virtualflip2 under menu>preset Commands>launch waze
+8.) on its first launch, the app will need some set up. scroll to the bottom of each page
+	and follow the on screen prompts. click on whatever you need to get through. be patient.
+
 Additional questions and suggestions should be addressed to sh7411usa01@gmail.com
 please dont harass. enjoy.
