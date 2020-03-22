@@ -95,7 +95,8 @@ educational purposes.
 	5.) be patient. the larger the app, the longer it takes. you will be notified when install completes.
 	6.) the app installs in the background, so you can continue to use virtualflip while it installs
 	7.) launch the app. you can do this in virtualflip2 under menu>preset Commands>launch waze
-	8.) on its first launch, the app will need some set up. scroll to the bottom of each page and follow the on screen prompts. click on whatever you need to get through. be patient.
+	8.) on its first launch, the app will need some set up. scroll to the bottom of each page and follow
+	    the on screen prompts. click on whatever you need to get through. be patient.
 
 Additional questions and suggestions should be addressed to sh7411usa01@gmail.com
 please dont harass.
