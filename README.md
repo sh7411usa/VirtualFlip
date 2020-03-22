@@ -79,5 +79,5 @@ J)	you can (attempt) to install apk files (android app packages) to the device u
 obviously the software is provide as is with no gaurantees, and no responsibility is
 taken by the dev for any eventualities arising even indirectly from the use of VirtualFlip2
 	
-Additional questions and suggestions should be addressed to sh7411usa@gmail.com
+Additional questions and suggestions should be addressed to sh7411usa01@gmail.com
 please dont harass. enjoy.
