@@ -72,6 +72,12 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Exalt_Keypad.Designer.vb">
+      <DependentUpon>Exalt_Keypad.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Exalt_Keypad.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Form1.Designer.vb">
       <DependentUpon>Form1.vb</DependentUpon>
     </Compile>
@@ -82,6 +88,12 @@
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
       <DependentUpon>Application.myapp</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\Output.Designer.vb">
+      <DependentUpon>Output.vb</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\Output.vb">
+      <SubType>Form</SubType>
     </Compile>
     <Compile Include="My Project\Resources.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -95,6 +107,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Exalt_Keypad.resx">
+      <DependentUpon>Exalt_Keypad.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.vb</DependentUpon>
     </EmbeddedResource>
