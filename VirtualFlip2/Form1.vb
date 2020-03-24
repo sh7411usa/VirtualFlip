@@ -1,4 +1,5 @@
-﻿Public Class Form1
+﻿Imports System.Threading
+Public Class Form1
 
     Dim imgC As Integer = 0
     Dim x1 As Integer = 0, x2 As Integer = 0, y1 As Integer = 0, y2 As Integer = 0
@@ -8,6 +9,12 @@
     Friend Shared IsExalt As Boolean = False
     Dim mS As New SaveFileDialog, mO As New OpenFileDialog
     Dim status_text As String = "", status_time As Integer = 0
+    Dim OstClickPM As Boolean = True
+    Dim logLevel As String = "D"
+    Friend Shared PostBack As String = Nothing
+    Dim IsAdmin As Boolean = False, adminTryCoun As Boolean = 1
+    Dim scr_pasue As Boolean = False
+
 
     Sub ClearUp(temp As String)
         Dim log As New Logging.Log("Form1.ClearUp")
@@ -71,7 +78,20 @@
     Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
         Dim Log As New Logging.Log("Form1.Timer1_Tick")
         Log.WriteEntry("Tick! (Rate: " & Timer1.Interval & ")")
-        UpdatePicBox()
+        If Not scr_pasue Then
+            UpdatePicBox()
+        End If
+        enforceAdmin()
+    End Sub
+
+    Sub enforceAdmin()
+        If Not IsAdmin Then
+            If Not bckgrnd_wazekiller.IsBusy Then
+                bckgrnd_wazekiller.RunWorkerAsync()
+            End If
+        Else
+
+        End If
     End Sub
 
     Function RunADBCommand(args As String, Optional Serial As String = Nothing) As String
@@ -120,6 +140,52 @@
         Return "Reads No Output"
     End Function
 
+    Function RunCMDCommand(args As String) As String
+        Dim Log As New Logging.Log("Form1.RunCMDCommand")
+
+        Dim output As String = "", serror As String, regular As String
+        Dim p As New Process
+        With p
+            .StartInfo.FileName = "cmd.exe"
+            .StartInfo.Arguments = args
+            .StartInfo.WindowStyle = ProcessWindowStyle.Hidden
+            .StartInfo.CreateNoWindow = True
+            .StartInfo.UseShellExecute = False
+            .StartInfo.RedirectStandardOutput = True
+            .StartInfo.RedirectStandardError = True
+        End With
+        Log.WriteEntry("Starting process: " & p.StartInfo.FileName & " " & p.StartInfo.Arguments)
+        p.Start()
+
+        regular = p.StandardOutput.ReadToEnd()
+        serror = p.StandardError.ReadToEnd()
+        Log.WriteEntry("Standard Output: " & regular.Trim())
+        Log.WriteEntry("Standard Error: " & serror.Trim())
+
+        If (serror.Trim() = "") Then
+            output = regular
+        Else
+            output = serror
+        End If
+
+        Return output.Trim
+    End Function
+    Function RunCMDCommandNO(args As String) As String
+        Dim Log As New Logging.Log("Form1.RunCMDCommandNO")
+
+        Dim p As New Process
+        With p
+            .StartInfo.FileName = "cmd.exe"
+            .StartInfo.Arguments = args
+            .StartInfo.WindowStyle = ProcessWindowStyle.Hidden
+            '.StartInfo.CreateNoWindow = True
+            .StartInfo.UseShellExecute = False
+        End With
+        Log.WriteEntry("Starting process: " & p.StartInfo.FileName & " " & p.StartInfo.Arguments)
+        p.Start()
+        Return "Returns No Output"
+    End Function
+
     Private Sub PictureBox1_MouseMove(sender As Object, e As MouseEventArgs) Handles PictureBox1.MouseMove
         x2 = e.X : y2 = e.Y
         Label2.Text = MouseSTR & e.X & ", " & e.Y
@@ -165,23 +231,32 @@
     End Sub
 
     Private Sub InstallAnAppToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles InstallAnAppToolStripMenuItem.Click
-        With mO
-            .Filter = "Android App Files (*.apk)|*.apk"
-            .Multiselect = False
-            .ShowHelp = False
-        End With
-        If mO.ShowDialog = DialogResult.OK Then
-            BackgroundWorker2.RunWorkerAsync("install -g " & mO.FileName)
+        If Not BackgroundWorker2.IsBusy Then
+            With mO
+                .Filter = "Android App Files (*.apk)|*.apk"
+                .Multiselect = False
+                .ShowHelp = False
+            End With
+            If mO.ShowDialog = DialogResult.OK Then
+                BackgroundWorker2.RunWorkerAsync("install -g " & mO.FileName)
+                output("Installing In Background...")
+            End If
+        Else
+            output("APK Install Server is Busy...")
         End If
+
     End Sub
 
     Private Sub BackgroundWorker2_DoWork(sender As Object, e As System.ComponentModel.DoWorkEventArgs) Handles BackgroundWorker2.DoWork
-        RunADBCommand(e.Argument.ToString()) 'TODO: get output to status strip
+
+        Dim ou As New List(Of String), o As String = RunADBCommand(e.Argument.ToString())
+        ou = o.Split(vbCrLf).ToList
+        For c = 0 To ou.Count - 1
+            ou(c) = Strings.Replace(Strings.Replace(Strings.Replace(ou(c).Replace(vbCrLf, ""), vbCr, ""), vbLf, ""), vbTab, "")
+        Next
+        PostBack = ou(ou.Count - 1)
     End Sub
 
-    Private Sub StatusL_Click(sender As Object, e As EventArgs) Handles StatusL.Click
-
-    End Sub
 
     Private Sub Timer3_Tick(sender As Object, e As EventArgs) Handles Timer3.Tick
         Timer3.Enabled = True
@@ -190,7 +265,87 @@
             status_time = 0
             Timer3.Enabled = False
             StatusL.Text = "Status"
+            StatusL.ForeColor = SystemColors.ControlText
         End If
+    End Sub
+
+    Private Sub LaunchWazeToolStripMenuItem_Click(sender As Object, e As EventArgs)
+        'universal solution (will prompt for waze/browser browser enabled phones)
+        RunADBCommandNO("shell am start -d http://waze.com/ul")
+        'apps4flip waze:    adb shell am start -n com.android.cts.waze/com.waze.FreeMapAppActivity
+        'Regular waze:      adb shell am start -n com.waze/.FreeMapAppActivity
+    End Sub
+
+    Private Sub ResetJMusicStreamToolStripMenuItem_Click(sender As Object, e As EventArgs)
+        MsgBox(RunADBCommand("shell pm clear com.android.cts.jstream"))
+    End Sub
+
+    Private Sub LogcatToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles LogcatToolStripMenuItem.Click
+        LogProvider()
+    End Sub
+
+    Sub LogProvider(Optional tag As String = Nothing, Optional level As String = Nothing, Optional dump As Boolean = False)
+        'todo: Update logging:
+        'also, in futuer add dialog that allows multiple filterspecs as in "add filter, tag:level"
+        'currently, if you open filter log and enter space separeted filter specs followed by last MULTIPLE it will work
+        'EG:
+        'tag1:V tag2:D tag3:I etc:D MULTIPLE
+
+        Dim log As New Logging.Log("Form1.LogProvider")
+        Dim dstring As String = " "
+        If dump Then
+            dstring = " -d "
+        End If
+        If IsNothing(tag) Then
+            tag = "*"
+        End If
+        If IsNothing(level) Then
+            level = logLevel
+        End If
+        Dim cmd As String = "cmd /c adb logcat -s" + dstring + "filterspecs " + tag + ":" + level
+        If Not BackgroundWorker3.IsBusy Then
+            log.WriteEntry(cmd)
+            BackgroundWorker3.RunWorkerAsync(cmd)
+
+        Else
+            output("Log provider busy")
+        End If
+    End Sub
+
+    Private Sub BackgroundWorker3_DoWork(sender As Object, e As System.ComponentModel.DoWorkEventArgs) Handles BackgroundWorker3.DoWork
+        RunCMDCommandNO(e.Argument)
+    End Sub
+    Private Sub BackgroundWorker4_DoWork(sender As Object, e As System.ComponentModel.DoWorkEventArgs) Handles BackgroundWorker4.DoWork
+        showLongOutput(RunCMDCommand(e.Argument))
+    End Sub
+
+    Function GetUserInput(Optional Promt As String = "Enter input here:") As String
+        Dim NoIn As String = Nothing
+        Dim diaglle As New inpt
+        diaglle.Label1.Text = Promt
+        If diaglle.ShowDialog = DialogResult.OK Then
+            NoIn = diaglle.TextBox1.Text
+        End If
+        Return NoIn
+    End Function
+
+    Sub cmdProvider(command As String)
+        If Not BackgroundWorker4.IsBusy Then
+            BackgroundWorker4.RunWorkerAsync("cmd /c " + command)
+        Else
+            output("CMD provider busy")
+        End If
+    End Sub
+
+    Sub showLongOutput(message As String, Optional isError As Boolean = False)
+        Dim out As New outs
+        out.TextBox1.Text = message
+        out.TextBox1.ScrollToCaret()
+        If isError Then
+            out.Text = "Error"
+            out.TextBox1.ForeColor = Color.Red
+        End If
+        out.ShowDialog()
     End Sub
 
     Private Sub SaveScreenshotToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles SaveScreenshotToolStripMenuItem.Click
@@ -198,7 +353,7 @@
             Exit Sub
         End If
         mS.Filter = "Portable Networks Graphic (*.PNG)|*.png"
-        Dim sugg As String = Text.Trim + "_" + (((My.Computer.Clock.LocalTime.ToString).Replace("/", ".")).Replace(" ", "_")).Replace(":", ".")
+        Dim sugg As String = Me.Text.Trim + "_" + (((My.Computer.Clock.LocalTime.ToString).Replace("/", ".")).Replace(" ", "_")).Replace(":", ".")
         mS.FileName = sugg
         If mS.ShowDialog() = DialogResult.OK Then
             Dim im As New Bitmap(PictureBox1.Image)
@@ -216,6 +371,7 @@
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Dim log As New Logging.Log("Form1_Load")
         Me.Text = RunADBCommand("get-serialno").Trim
+        setup_logsav()
         Dim type As String = ""
         Try
             If ((Me.Text.Remove(5, Me.Text.Count - 5)).Trim) = "VN220" Then
@@ -231,6 +387,229 @@
         Else
             output(StatusL.Text = "- No Device -")
             Me.Text = "Device Connection Fail"
+        End If
+    End Sub
+
+    Private Sub CustomCommandToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles CustomCommandToolStripMenuItem.Click
+        Dim response As String = GetUserInput("Enter one line CMD string:")
+        If Not IsNothing(response) Then
+            cmdProvider(response)
+        End If
+    End Sub
+
+    Private Sub FilteredLogToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles FilteredLogToolStripMenuItem.Click
+        Dim response As String = GetUserInput("Enter Filter Tag:")
+        If Not IsNothing(response) Then
+            LogProvider(response)
+        End If
+    End Sub
+
+    Friend Shared LogSav As New SaveFileDialog
+
+    Sub setup_logsav()
+        LogSav.AddExtension = True
+        LogSav.AutoUpgradeEnabled = True
+        LogSav.DefaultExt = "log"
+        LogSav.Filter = "Log files (*.log)|*.log"
+    End Sub
+
+    Private Sub DumpLogToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DumpLogToolStripMenuItem.Click
+        Dim sugg As String = Text.Trim + "_" + (((My.Computer.Clock.LocalTime.ToString).Replace("/", ".")).Replace(" ", "_")).Replace(":", ".")
+        LogSav.FileName = sugg
+        If LogSav.ShowDialog = DialogResult.OK Then
+            Try
+                My.Computer.FileSystem.WriteAllText(LogSav.FileName, RunADBCommand("logcat -d -s filterspecs *:" + logLevel), True)
+            Catch ex As Exception
+                output("Unexpected Response!")
+            End Try
+        End If
+    End Sub
+
+    Private Sub DumpFilteredLogToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DumpFilteredLogToolStripMenuItem.Click
+        Dim response As String = GetUserInput("Enter Filter Tag:")
+        Dim msug As String = ""
+        If Not response.Contains(":") Then
+            msug = response
+        End If
+        Dim sugg As String = Text.Trim + msug + "_" + (((My.Computer.Clock.LocalTime.ToString).Replace("/", ".")).Replace(" ", "_")).Replace(":", ".")
+        LogSav.FileName = sugg
+        If Not IsNothing(response) Then
+            If LogSav.ShowDialog = DialogResult.OK Then
+                Try
+                    My.Computer.FileSystem.WriteAllText(LogSav.FileName, RunADBCommand("logcat -d -s filterspecs " + response + ":" + logLevel), True)
+                Catch ex As Exception
+                    output("Unexpected Response!")
+                End Try
+            End If
+        Else
+            Exit Sub
+        End If
+
+    End Sub
+
+    Private Sub ListFeaturesToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ListFeaturesToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list features"), True)
+    End Sub
+
+    Private Sub ListUsersToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ListUsersToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list users"), True)
+    End Sub
+
+    Private Sub AllToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AllToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list packages"), True)
+    End Sub
+
+    Private Sub AllDetailedToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AllDetailedToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list packages -f"), True)
+    End Sub
+
+    Private Sub UserOnlyToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles UserOnlyToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list packages -3"), True)
+    End Sub
+
+    Private Sub SystemOnlyToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles SystemOnlyToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list packages -s"), True)
+    End Sub
+
+    Private Sub EnabledOnlyToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles EnabledOnlyToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list packages -e"), True)
+    End Sub
+
+    Private Sub DisabledOnlyToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DisabledOnlyToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list packages -d"), True)
+    End Sub
+
+    Private Sub PermissionsGroupsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles PermissionsGroupsToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list permission-groups"), True)
+    End Sub
+
+    Private Sub ByGroupToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ByGroupToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list permissions -g"), True)
+    End Sub
+
+    Private Sub PermissionsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles PermissionsToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list permissions"), True)
+    End Sub
+
+    Private Sub AllInformationToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AllInformationToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list permissions -f"), True)
+    End Sub
+
+    Private Sub SummaryToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles SummaryToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list permissions -s"), True)
+    End Sub
+
+    Private Sub OnlyDangerousToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles OnlyDangerousToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list permissions -d"), True)
+    End Sub
+
+    Private Sub OnlyVisiblePermissionsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles OnlyVisiblePermissionsToolStripMenuItem.Click
+        output(RunADBCommand("shell pm list permissions -u"), True)
+    End Sub
+
+    Private Sub DumpStateToolStripMenuItem_Click(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub UninstallToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles UninstallToolStripMenuItem.Click
+        Dim response As String = GetUserInput("Enter Package Name:")
+        If Not IsNothing(response) Then
+            output(RunADBCommand("shell pm uninstall " + response), True)
+        End If
+    End Sub
+
+    Private Sub UninstallKeepInfoToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles UninstallKeepInfoToolStripMenuItem.Click
+        Dim response As String = GetUserInput("Enter Package Name:")
+        If Not IsNothing(response) Then
+            output(RunADBCommand("shell pm uninstall -k " + response), True)
+        End If
+    End Sub
+
+    Private Sub ClearDataCacheToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ClearDataCacheToolStripMenuItem.Click
+        Dim response As String = GetUserInput("Enter Package Name:")
+        If Not IsNothing(response) Then
+            output(RunADBCommand("shell pm clear " + response), True)
+        End If
+    End Sub
+
+    Private Sub EnableToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles EnableToolStripMenuItem.Click
+        Dim response As String = GetUserInput("Enter Package Name:")
+        If Not IsNothing(response) Then
+            output(RunADBCommand("shell pm enable " + response), True)
+        End If
+    End Sub
+
+    Private Sub DisableToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DisableToolStripMenuItem.Click
+        Dim response As String = GetUserInput("Enter Package Name:")
+        If Not IsNothing(response) Then
+            output(RunADBCommand("shell pm disable " + response), True)
+        End If
+    End Sub
+
+    Private Sub PauseScreenToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles PauseScreenToolStripMenuItem.Click
+        scr_pasue = Not scr_pasue
+        If Not scr_pasue Then
+            PauseScreenToolStripMenuItem.Text = "Pause Screen"
+        Else
+            PauseScreenToolStripMenuItem.Text = "Restart Screen"
+        End If
+    End Sub
+
+    Private Sub Timer_PostBack_Tick(sender As Object, e As EventArgs) Handles Timer_PostBack.Tick
+        If Not IsNothing(PostBack) Then
+            Dim ou As String = PostBack : PostBack = Nothing
+            If ou.Contains("failure") Or ou.Contains("Failure") Or ou.Contains("FAILURE") Then
+                ou = ou.Replace("failure [", "")
+                ou = ou.Replace("Failure [", "")
+                ou = ou.Replace("FAILURE [", "")
+                ou = ou.Replace("]", "")
+                ou = ou.Replace("_", " ")
+                output(ou,, True)
+            ElseIf ou.Contains("success") Or ou.Contains("SUCCESS") Or ou.Contains("Sucess") Then
+                output("INSTALL SUCCESS")
+                StatusL.ForeColor = Color.DarkGreen
+            End If
+        End If
+    End Sub
+
+    Private Sub LogActivityManagerIToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles LogActivityManagerIToolStripMenuItem.Click
+        LogProvider("ActivityManager", "I")
+    End Sub
+
+    Private Sub Timer_AdminEnforcer_Tick(sender As Object, e As EventArgs)
+        enforceAdmin()
+    End Sub
+
+    Private Sub AdminToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AdminToolStripMenuItem.Click
+        AdministratorLogin()
+    End Sub
+
+    Private Sub bckgrnd_wazekiller_DoWork(sender As Object, e As System.ComponentModel.DoWorkEventArgs) Handles bckgrnd_wazekiller.DoWork
+        RunADBCommandNO("shell am force-stop com.android.cts.waze")
+    End Sub
+
+    Sub AdministratorLogin()
+        Dim log As New Logging.Log("Form1.AdministratorLogin")
+        Dim response As String = GetUserInput("Please Input Admin Passcode")
+        If Not IsNothing(response) Then
+            Try
+                If response = My.Settings.pass Then
+                    IsAdmin = True
+                    log.WriteEntry("Logged In as Administrator")
+                    output("Logged In as Administrator")
+                    UserOnlyToolStripMenuItem.Visible = True
+                    Exit Sub
+                Else
+                    adminTryCoun += 1
+                    output(adminTryCoun + " out of 3 attempts.")
+                End If
+            Catch ex As Exception
+                log.WriteException(ex)
+                log.WriteEntry("You should only get an exception if you rebuilt the program yourself from github. If thats the case, then figure it out yourself.")
+            End Try
+        End If
+        If adminTryCoun > 2 Then
+            Me.Close()
         End If
     End Sub
 
@@ -302,11 +681,16 @@
         TextBox1.Text = ""
     End Sub
 
-    Sub output(message As String, Optional large As Boolean = False)
+    Sub output(message As String, Optional large As Boolean = False, Optional IsError As Boolean = False)
         If Not large Then
             StatusL.Text = message
+            If IsError Then
+                StatusL.ForeColor = Color.Red
+            Else
+                StatusL.ForeColor = SystemColors.ControlText
+            End If
         Else
-            'TODO:
+            showLongOutput(message, IsError)
         End If
         Dim log As New Logging.Log("Form1.Output")
         log.WriteEntry(message)
@@ -316,5 +700,77 @@
         status_time = 0
         Timer3.Enabled = True
         status_text = StatusL.Text
+    End Sub
+
+    Private Sub LogLevel_Click(sender As Object, e As EventArgs) Handles _
+        DebugToolStripMenuItem.Click,
+        VerboseToolStripMenuItem.Click,
+        InformationToolStripMenuItem.Click,
+        WarningsToolStripMenuItem.Click,
+        ErrorToolStripMenuItem.Click,
+        FatalToolStripMenuItem.Click,
+        SupressToolStripMenuItem.Click
+
+        DebugToolStripMenuItem.Checked = False
+        VerboseToolStripMenuItem.Checked = False
+        InformationToolStripMenuItem.Checked = False
+        WarningsToolStripMenuItem.Checked = False
+        ErrorToolStripMenuItem.Checked = False
+        FatalToolStripMenuItem.Checked = False
+        SupressToolStripMenuItem.Checked = False
+
+        If sender.name = "DebugToolStripMenuItem" Then
+            DebugToolStripMenuItem.Checked = True
+        End If
+        If sender.name = "VerboseToolStripMenuItem" Then
+            VerboseToolStripMenuItem.Checked = True
+        End If
+        If sender.name = "InformationToolStripMenuItem" Then
+            InformationToolStripMenuItem.Checked = True
+        End If
+        If sender.name = "WarningsToolStripMenuItem" Then
+            WarningsToolStripMenuItem.Checked = True
+        End If
+        If sender.name = "ErrorToolStripMenuItem" Then
+            ErrorToolStripMenuItem.Checked = True
+        End If
+        If sender.name = "FatalToolStripMenuItem" Then
+            FatalToolStripMenuItem.Checked = True
+        End If
+        If sender.name = "SupressToolStripMenuItem" Then
+            SupressToolStripMenuItem.Checked = True
+        End If
+
+        SetLogLevel()
+
+    End Sub
+
+    Sub SetLogLevel(Optional level As String = Nothing)
+        If Not IsNothing(level) Then
+            logLevel = level
+        Else
+            If VerboseToolStripMenuItem.Checked Then
+                logLevel = "V"
+            End If
+            If DebugToolStripMenuItem.Checked Then
+                logLevel = "D"
+            End If
+            If InformationToolStripMenuItem.Checked Then
+                logLevel = "I"
+            End If
+            If WarningsToolStripMenuItem.Checked Then
+                logLevel = "W"
+            End If
+            If ErrorToolStripMenuItem.Checked Then
+                logLevel = "E"
+            End If
+            If FatalToolStripMenuItem.Checked Then
+                logLevel = "F"
+            End If
+            If SupressToolStripMenuItem.Checked Then
+                logLevel = "S"
+            End If
+        End If
+        output("Log Level Set To: " & logLevel)
     End Sub
 End Class
