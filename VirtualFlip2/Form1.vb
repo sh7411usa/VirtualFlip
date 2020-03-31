@@ -14,6 +14,7 @@ Public Class Form1
     Friend Shared PostBack As String = Nothing
     Dim IsAdmin As Boolean = False, adminTryCoun As Boolean = 1
     Dim scr_pasue As Boolean = False
+    Dim SERIAL As String = ""
 
 
     Sub ClearUp(temp As String)
@@ -264,7 +265,11 @@ Public Class Form1
         If status_time > 5 Then
             status_time = 0
             Timer3.Enabled = False
-            StatusL.Text = "Status"
+            Dim statusText As String = "Status"
+            If IsAdmin Then
+                statusText = "Administrator"
+            End If
+            StatusL.Text = statusText
             StatusL.ForeColor = SystemColors.ControlText
         End If
     End Sub
@@ -370,23 +375,42 @@ Public Class Form1
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Dim log As New Logging.Log("Form1_Load")
-        Me.Text = RunADBCommand("get-serialno").Trim
-        setup_logsav()
-        Dim type As String = ""
-        Try
-            If ((Me.Text.Remove(5, Me.Text.Count - 5)).Trim) = "VN220" Then
-                IsExalt = True
-            End If
-        Catch ex As Exception
-            log.WriteException(ex)
-        End Try
-        'TODO: determine if 4G flip, currently only detects exalt if adb on usb
-        setFlipKeys(IsExalt)
-        If Not Me.Text = "error: no devices/emulators found" Then
-            output("Connected: " + Me.Text)
+        Dim ftext As String = RunADBCommand("get-serialno").Trim
+        IsAdmin = My.Settings.rem_admin
+        If Not IsAdmin Then
+            AdminToolStripMenuItem.Text = "Admin"
         Else
-            output(StatusL.Text = "- No Device -")
-            Me.Text = "Device Connection Fail"
+            AdminToolStripMenuItem.Text = "Log Out"
+        End If
+        setup_logsav()
+        'TODO: determine if 4G flip, currently only detects exalt if adb on usb
+        'TODO: determine if multiple devices connected
+        'todo: if form exceeds host screen, zoom out! 
+        setFlipKeys(IsExalt)
+        Select Case ftext
+            Case "error: no devices/emulators found"
+                AlertAndCrash("There is no device connected, or the connection is faulty.")
+            Case "error: more than one device/emulator"
+                AlertAndCrash("VirtualFlip2 only works with one device connected at a time.")
+            Case "'adb' is not recognized as an internal or external command, operable program or batch file."
+                AlertAndCrash("VirtualFlip2 Requires ADB to run!")
+            Case Else
+                SERIAL = ftext
+                Me.Text = ftext
+                output("Connected: " + ftext)
+                Try
+                    If ((ftext.Remove(5, ftext.Count - 5)).Trim) = "VN220" Then
+                        IsExalt = True
+                    End If
+                Catch ex As Exception
+                    log.WriteException(ex)
+                End Try
+        End Select
+    End Sub
+
+    Sub AlertAndCrash(message As String)
+        If Not MsgBox(message, MsgBoxStyle.Critical) = MsgBoxResult.Retry Then
+            Me.Close()
         End If
     End Sub
 
@@ -564,9 +588,10 @@ Public Class Form1
                 ou = ou.Replace("FAILURE [", "")
                 ou = ou.Replace("]", "")
                 ou = ou.Replace("_", " ")
-                output(ou,, True)
+                'output(ou,, True)
+                output("Install: Failure",, True)
             ElseIf ou.Contains("success") Or ou.Contains("SUCCESS") Or ou.Contains("Sucess") Then
-                output("INSTALL SUCCESS")
+                output("Install: Success")
                 StatusL.ForeColor = Color.DarkGreen
             End If
         End If
@@ -588,8 +613,20 @@ Public Class Form1
         RunADBCommandNO("shell am force-stop com.android.cts.waze")
     End Sub
 
+    Private Sub TextBox1_TextChanged(sender As Object, e As EventArgs) Handles TextBox1.TextChanged
+
+    End Sub
+
     Sub AdministratorLogin()
         Dim log As New Logging.Log("Form1.AdministratorLogin")
+        If IsAdmin Then
+            IsAdmin = False
+            My.Settings.rem_admin = False
+            My.Settings.Save()
+            AdminToolStripMenuItem.Text = "Admin"
+            output("Logged Out")
+            Exit Sub
+        End If
         Dim response As String = GetUserInput("Please Input Admin Passcode")
         If Not IsNothing(response) Then
             Try
@@ -598,6 +635,11 @@ Public Class Form1
                     log.WriteEntry("Logged In as Administrator")
                     output("Logged In as Administrator")
                     UserOnlyToolStripMenuItem.Visible = True
+                    AdminToolStripMenuItem.Text = "Log Out"
+                    If MsgBox("Stay Logged In for next session?", MsgBoxStyle.Question Or MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+                        My.Settings.rem_admin = True
+                        My.Settings.Save()
+                    End If
                     Exit Sub
                 Else
                     adminTryCoun += 1
@@ -676,9 +718,32 @@ Public Class Form1
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
         Dim log As New Logging.Log("Form1.Button1_Click")
+        'TODO: ^escape char is not working!
+        If TextBox1.Text.Contains("^") Then
+            TextBox1.Text = TextBox1.Text.Replace("^", "^^")
+        End If
+        If TextBox1.Text.Contains("'") Then
+            TextBox1.Text = TextBox1.Text.Replace("'", "^'")
+        End If
+        If TextBox1.Text.Contains("""") Then
+            TextBox1.Text = TextBox1.Text.Replace("""", "^""")
+        End If
+        If TextBox1.Text.Contains("&") Then
+            TextBox1.Text = TextBox1.Text.Replace("&", "^&")
+        End If
+        If TextBox1.Text.Contains(">") Then
+            TextBox1.Text = TextBox1.Text.Replace(">", "^>")
+        End If
+        If TextBox1.Text.Contains("<") Then
+            TextBox1.Text = TextBox1.Text.Replace("<", "^<")
+        End If
+        If TextBox1.Text.Contains("|") Then
+            TextBox1.Text = TextBox1.Text.Replace("|", "^|")
+        End If
         output("Text Sent: """ & TextBox1.Text & """")
         RunADBCommandNO("shell input text '" & TextBox1.Text & "'")
         TextBox1.Text = ""
+        TextBox1.Select()
     End Sub
 
     Sub output(message As String, Optional large As Boolean = False, Optional IsError As Boolean = False)
