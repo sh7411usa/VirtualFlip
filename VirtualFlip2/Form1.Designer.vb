@@ -41,6 +41,8 @@ Partial Class Form1
         Me.SaveScreenshotToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripSeparator1 = New System.Windows.Forms.ToolStripSeparator()
         Me.PauseScreenToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ToolStripSeparator8 = New System.Windows.Forms.ToolStripSeparator()
+        Me.AdminToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.PresetCommandsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.PackagesToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ListPackagesToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -74,6 +76,7 @@ Partial Class Form1
         Me.LogsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.LogcatToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.FilteredLogToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.LogActivityManagerIToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripSeparator5 = New System.Windows.Forms.ToolStripSeparator()
         Me.DumpLogToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.DumpFilteredLogToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -95,9 +98,6 @@ Partial Class Form1
         Me.BackgroundWorker3 = New System.ComponentModel.BackgroundWorker()
         Me.BackgroundWorker4 = New System.ComponentModel.BackgroundWorker()
         Me.Timer_PostBack = New System.Windows.Forms.Timer(Me.components)
-        Me.LogActivityManagerIToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.AdminToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.ToolStripSeparator8 = New System.Windows.Forms.ToolStripSeparator()
         Me.bckgrnd_wazekiller = New System.ComponentModel.BackgroundWorker()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MenuStrip1.SuspendLayout()
@@ -241,6 +241,17 @@ Partial Class Form1
         Me.PauseScreenToolStripMenuItem.Name = "PauseScreenToolStripMenuItem"
         Me.PauseScreenToolStripMenuItem.Size = New System.Drawing.Size(159, 22)
         Me.PauseScreenToolStripMenuItem.Text = "Pause Screen"
+        '
+        'ToolStripSeparator8
+        '
+        Me.ToolStripSeparator8.Name = "ToolStripSeparator8"
+        Me.ToolStripSeparator8.Size = New System.Drawing.Size(156, 6)
+        '
+        'AdminToolStripMenuItem
+        '
+        Me.AdminToolStripMenuItem.Name = "AdminToolStripMenuItem"
+        Me.AdminToolStripMenuItem.Size = New System.Drawing.Size(159, 22)
+        Me.AdminToolStripMenuItem.Text = "Admin"
         '
         'PresetCommandsToolStripMenuItem
         '
@@ -443,6 +454,12 @@ Partial Class Form1
         Me.FilteredLogToolStripMenuItem.Size = New System.Drawing.Size(172, 22)
         Me.FilteredLogToolStripMenuItem.Text = "Filtered Live Log"
         '
+        'LogActivityManagerIToolStripMenuItem
+        '
+        Me.LogActivityManagerIToolStripMenuItem.Name = "LogActivityManagerIToolStripMenuItem"
+        Me.LogActivityManagerIToolStripMenuItem.Size = New System.Drawing.Size(172, 22)
+        Me.LogActivityManagerIToolStripMenuItem.Text = "ActivityManager:I"
+        '
         'ToolStripSeparator5
         '
         Me.ToolStripSeparator5.Name = "ToolStripSeparator5"
@@ -571,23 +588,6 @@ Partial Class Form1
         'Timer_PostBack
         '
         Me.Timer_PostBack.Enabled = True
-        '
-        'LogActivityManagerIToolStripMenuItem
-        '
-        Me.LogActivityManagerIToolStripMenuItem.Name = "LogActivityManagerIToolStripMenuItem"
-        Me.LogActivityManagerIToolStripMenuItem.Size = New System.Drawing.Size(172, 22)
-        Me.LogActivityManagerIToolStripMenuItem.Text = "ActivityManager:I"
-        '
-        'AdminToolStripMenuItem
-        '
-        Me.AdminToolStripMenuItem.Name = "AdminToolStripMenuItem"
-        Me.AdminToolStripMenuItem.Size = New System.Drawing.Size(159, 22)
-        Me.AdminToolStripMenuItem.Text = "Admin"
-        '
-        'ToolStripSeparator8
-        '
-        Me.ToolStripSeparator8.Name = "ToolStripSeparator8"
-        Me.ToolStripSeparator8.Size = New System.Drawing.Size(156, 6)
         '
         'bckgrnd_wazekiller
         '

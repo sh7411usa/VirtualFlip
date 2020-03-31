@@ -53,6 +53,7 @@ Partial Class Exalt_Keypad
         Me.Button28 = New System.Windows.Forms.Button()
         Me.Timer2 = New System.Windows.Forms.Timer(Me.components)
         Me.Button30 = New System.Windows.Forms.Button()
+        Me.Label1 = New System.Windows.Forms.Label()
         Me.SuspendLayout()
         '
         'Button1
@@ -319,11 +320,21 @@ Partial Class Exalt_Keypad
         Me.Button30.Text = "PWR"
         Me.Button30.UseVisualStyleBackColor = True
         '
+        'Label1
+        '
+        Me.Label1.AutoSize = True
+        Me.Label1.Location = New System.Drawing.Point(24, 266)
+        Me.Label1.Name = "Label1"
+        Me.Label1.Size = New System.Drawing.Size(132, 13)
+        Me.Label1.TabIndex = 33
+        Me.Label1.Text = "Keypad is still experimental"
+        '
         'Exalt_Keypad
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(180, 352)
+        Me.Controls.Add(Me.Label1)
         Me.Controls.Add(Me.Button30)
         Me.Controls.Add(Me.Button28)
         Me.Controls.Add(Me.Button27)
@@ -361,6 +372,7 @@ Partial Class Exalt_Keypad
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
         Me.Text = "Basic Phone Keys"
         Me.ResumeLayout(False)
+        Me.PerformLayout()
 
     End Sub
 
@@ -394,4 +406,5 @@ Partial Class Exalt_Keypad
     Friend WithEvents Button28 As Button
     Friend WithEvents Timer2 As Timer
     Friend WithEvents Button30 As Button
+    Friend WithEvents Label1 As Label
 End Class

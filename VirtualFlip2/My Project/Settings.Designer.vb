@@ -65,6 +65,18 @@ Namespace My
                 Me("pass") = value
             End Set
         End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("False")>  _
+        Public Property rem_admin() As Boolean
+            Get
+                Return CType(Me("rem_admin"),Boolean)
+            End Get
+            Set
+                Me("rem_admin") = value
+            End Set
+        End Property
     End Class
 End Namespace
 

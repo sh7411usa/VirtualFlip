@@ -3,7 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="pass" Type="System.String" Scope="User">
-      <Value Profile="(Default)">4097</Value>
+      <Value Profile="(Default)">9090</Value>
+    </Setting>
+    <Setting Name="rem_admin" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>
